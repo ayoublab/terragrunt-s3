@@ -13,7 +13,7 @@ terraform {
 }
 
 inputs = {
-  bucket_name = "my-terragrunt-s3-dev-bucket"
+  bucket_name = "terragrunt-s3-dev-bucket-test-morocco"
   region      = local.region   
   tags = {
     environment = "dev"
