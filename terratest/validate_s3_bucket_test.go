@@ -15,6 +15,7 @@ import (
 
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/require"
+	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
 )
 
 func TestValidateS3Bucket(t *testing.T) {
@@ -43,6 +44,26 @@ func TestValidateS3Bucket(t *testing.T) {
 	assert.True(t, actualTags["environment"] == "dev")
 	assert.True(t, actualTags["owner"] == "myself")
 	
+	cfg, err := config.LoadDefaultConfig(
+		context.TODO(),
+		config.WithRegion(region),
+	)
+	require.NoError(t, err)
+
+	s3c := s3.NewFromConfig(cfg)
+	encOut, err := s3c.GetBucketEncryption(
+		ctx,
+		&s3.GetBucketEncryptionInput{Bucket: awsv2.String(bucketName)},
+	)
+	require.NoError(t, err)
+	assert.Equal(
+		t,
+		s3types.ServerSideEncryptionAes256,
+		encOut.ServerSideEncryptionConfiguration.
+			Rules[0].ApplyServerSideEncryptionByDefault.
+			SSEAlgorithm,
+		"Bucket should be encrypted with AES-256 (SSE-S3)",
+	)
 	assertBucketPublicAccessBlock(t, region, bucketName)
 	
 }
