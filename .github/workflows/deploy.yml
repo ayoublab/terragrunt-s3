@@ -1,0 +1,61 @@
+name: Deploy and Test S3 Bucket
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    environment: dev
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install Terraform & Terragrunt
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y unzip curl
+          curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo tee /etc/apt/trusted.gpg.d/hashicorp.asc
+          sudo apt-add-repository "deb https://apt.releases.hashicorp.com $(lsb_release -cs) main"
+          sudo apt-get update && sudo apt-get install -y terraform
+          TG_VERSION="0.77.22"
+          curl -sSL "https://github.com/gruntwork-io/terragrunt/releases/download/v${TG_VERSION}/terragrunt_linux_amd64" \
+            -o terragrunt
+          sudo install terragrunt /usr/local/bin/terragrunt
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4.1.0
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            ${{ secrets.AWS_REGION }}
+
+      - name: Set up Go environment
+        run: |
+          sudo apt update
+          sudo apt install -y golang
+          
+          go mod init terratest
+          go mod tidy
+
+      - name: Install Terratest dependencies
+        run: |
+          go get github.com/gruntwork-io/terratest/modules/terraform
+          go get github.com/gruntwork-io/terratest/modules/aws
+          go get github.com/stretchr/testify/assert
+
+      - name: Run Terratest for S3 Bucket
+        run: |
+          cd envs/dev
+          
+          terragrunt init --backend-bootstrap 
+          
+          terragrunt apply --auto-approve --backend-bootstrap 
+          cd ../../terratest
+          go test -v 
