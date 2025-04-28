@@ -52,10 +52,10 @@ func TestValidateS3Bucket(t *testing.T) {
 
 	s3c := s3.NewFromConfig(cfg)
 	encOut, err := s3c.GetBucketEncryption(
-		ctx,
+		context.TODO(),
 		&s3.GetBucketEncryptionInput{Bucket: awsv2.String(bucketName)},
 	)
-	require.NoError(t, err)
+	require.NoError(t, err, "The bucket SSE is causing error on the bucket : %s", bucket)
 	assert.Equal(
 		t,
 		s3types.ServerSideEncryptionAes256,
