@@ -55,7 +55,7 @@ func TestValidateS3Bucket(t *testing.T) {
 		context.TODO(),
 		&s3.GetBucketEncryptionInput{Bucket: awsv2.String(bucketName)},
 	)
-	require.NoError(t, err, "The bucket SSE is causing error on the bucket : %s", bucket)
+	require.NoError(t, err, "The bucket SSE is causing error on the bucket : %s", bucketName)
 	assert.Equal(
 		t,
 		s3types.ServerSideEncryptionAes256,
